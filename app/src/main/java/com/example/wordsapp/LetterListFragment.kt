@@ -24,10 +24,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.wordsapp.data.SettingsDataStore
 import com.example.wordsapp.databinding.FragmentLetterListBinding
+import kotlinx.coroutines.launch
 
 /**
  * Entry fragment for the app. Displays a [RecyclerView] of letters.
@@ -43,6 +47,7 @@ class LetterListFragment : Fragment() {
     // Keeps track of which LayoutManager is in use for the [RecyclerView]
     private var isLinearLayoutManager = true
 
+    private lateinit var SettingsDataStore : SettingsDataStore
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -64,6 +69,12 @@ class LetterListFragment : Fragment() {
         // Sets the LayoutManager of the recyclerview
         // On the first run of the app, it will be LinearLayoutManager
         chooseLayout()
+
+        SettingsDataStore = SettingsDataStore(requireContext())
+        SettingsDataStore.preferenceFlow.asLiveData().observe(viewLifecycleOwner) { value ->
+            isLinearLayoutManager = value
+            chooseLayout()
+        }
     }
 
     /**
@@ -117,6 +128,11 @@ class LetterListFragment : Fragment() {
                 // Sets layout and icon
                 chooseLayout()
                 setIcon(item)
+
+                lifecycleScope.launch{
+                    SettingsDataStore.saveLayoutToPreferencesStore(isLinearLayoutManager, requireContext())
+                    activity?.invalidateOptionsMenu()
+                }
 
                 return true
             }
